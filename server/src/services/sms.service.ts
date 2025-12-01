@@ -1,4 +1,3 @@
-import { getSNS } from '../config/aws';
 import { getFirestore } from '../config/firebase';
 
 export interface SendSMSRequest {
@@ -14,36 +13,36 @@ export interface SMSResult {
   error?: string;
 }
 
+// 인메모리 저장소 (데모용)
+const mockHistory: any[] = [];
+
 export class SMSService {
-  private sns = getSNS();
   private db = getFirestore();
 
   /**
-   * 단일 SMS 발송
+   * 단일 SMS 발송 (Mock 모드)
    */
   async sendSingleSMS(phoneNumber: string, message: string): Promise<SMSResult> {
     try {
-      // E.164 형식으로 전화번호 변환 (예: +821012345678)
+      // 데모 모드: 실제 발송 없이 성공 응답 반환
       const formattedNumber = this.formatPhoneNumber(phoneNumber);
 
-      const params = {
-        Message: message,
-        PhoneNumber: formattedNumber,
-        MessageAttributes: {
-          'AWS.SNS.SMS.SMSType': {
-            DataType: 'String',
-            StringValue: 'Transactional', // 또는 'Promotional'
-          },
-        },
-      };
+      // 시뮬레이션: 10% 확률로 실패
+      const isSuccess = Math.random() > 0.1;
 
-      const result = await this.sns.publish(params).promise();
-
-      return {
-        phoneNumber,
-        messageId: result.MessageId,
-        status: 'success',
-      };
+      if (isSuccess) {
+        return {
+          phoneNumber: formattedNumber,
+          messageId: `mock-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+          status: 'success',
+        };
+      } else {
+        return {
+          phoneNumber: formattedNumber,
+          status: 'failed',
+          error: 'Simulated failure for demo',
+        };
+      }
     } catch (error: any) {
       console.error(`Failed to send SMS to ${phoneNumber}:`, error);
       return {
@@ -73,7 +72,7 @@ export class SMSService {
     const totalSent = results.filter(r => r.status === 'success').length;
     const totalFailed = results.filter(r => r.status === 'failed').length;
 
-    // 발송 이력을 Firestore에 저장
+    // 발송 이력을 저장 (Mock 모드)
     await this.saveHistory({
       userId: request.userId,
       message: request.message,
@@ -114,10 +113,18 @@ export class SMSService {
    */
   private async saveHistory(data: any): Promise<void> {
     try {
-      await this.db.collection('sms_history').add(data);
-      console.log('✅ SMS history saved');
+      if (this.db) {
+        await this.db.collection('sms_history').add(data);
+        console.log('✅ SMS history saved to Firestore');
+      } else {
+        // Mock 모드: 인메모리에 저장
+        mockHistory.unshift({ ...data, id: `mock-${Date.now()}` });
+        console.log('✅ SMS history saved to memory (Mock mode)');
+      }
     } catch (error) {
       console.error('Failed to save SMS history:', error);
+      // Mock으로 폴백
+      mockHistory.unshift({ ...data, id: `mock-${Date.now()}` });
     }
   }
 
@@ -126,20 +133,31 @@ export class SMSService {
    */
   async getHistory(userId: string, limit: number = 50): Promise<any[]> {
     try {
-      const snapshot = await this.db
-        .collection('sms_history')
-        .where('userId', '==', userId)
-        .orderBy('timestamp', 'desc')
-        .limit(limit)
-        .get();
+      if (this.db) {
+        const snapshot = await this.db
+          .collection('sms_history')
+          .where('userId', '==', userId)
+          .orderBy('timestamp', 'desc')
+          .limit(limit)
+          .get();
 
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+        return snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+      } else {
+        // Mock 모드: 인메모리에서 조회
+        console.log('📝 Fetching history from memory (Mock mode)');
+        return mockHistory
+          .filter(h => h.userId === userId)
+          .slice(0, limit);
+      }
     } catch (error) {
       console.error('Failed to get SMS history:', error);
-      return [];
+      // Mock으로 폴백
+      return mockHistory
+        .filter(h => h.userId === userId)
+        .slice(0, limit);
     }
   }
 }

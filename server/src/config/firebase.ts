@@ -27,9 +27,10 @@ export const initializeFirebase = () => {
   }
 };
 
-export const getFirestore = (): admin.firestore.Firestore => {
+export const getFirestore = (): admin.firestore.Firestore | null => {
   if (!db) {
-    throw new Error('Firestore not initialized');
+    console.warn('⚠️  Firestore not available, using mock mode');
+    return null as any;
   }
   return db;
 };

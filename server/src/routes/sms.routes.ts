@@ -16,7 +16,7 @@ router.post(
     body('message').isString().notEmpty().withMessage('Message is required'),
     body('userId').isString().notEmpty().withMessage('User ID is required'),
   ],
-  async (req, res) => {
+  async (req: express.Request, res: express.Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -47,7 +47,7 @@ router.post(
     body('phoneNumber').isString().notEmpty().withMessage('Phone number is required'),
     body('message').isString().notEmpty().withMessage('Message is required'),
   ],
-  async (req, res) => {
+  async (req: express.Request, res: express.Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });

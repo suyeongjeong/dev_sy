@@ -16,7 +16,7 @@ router.post(
     body('phoneNumber').isString().notEmpty().withMessage('Phone number is required'),
     body('userId').isString().notEmpty().withMessage('User ID is required'),
   ],
-  async (req, res) => {
+  async (req: express.Request, res: express.Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -44,7 +44,7 @@ router.post(
 router.get(
   '/',
   [query('userId').isString().notEmpty().withMessage('User ID is required')],
-  async (req, res) => {
+  async (req: express.Request, res: express.Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -73,7 +73,7 @@ router.get(
  * PUT /api/contacts/:id
  * 연락처 수정
  */
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req: express.Request, res: express.Response) => {
   try {
     await contactService.updateContact(req.params.id, req.body);
     res.json({
@@ -92,7 +92,7 @@ router.put('/:id', async (req, res) => {
  * DELETE /api/contacts/:id
  * 연락처 삭제
  */
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: express.Request, res: express.Response) => {
   try {
     await contactService.deleteContact(req.params.id);
     res.json({
@@ -111,7 +111,7 @@ router.delete('/:id', async (req, res) => {
  * POST /api/contacts/bulk
  * 대량 연락처 추가
  */
-router.post('/bulk', async (req, res) => {
+router.post('/bulk', async (req: express.Request, res: express.Response) => {
   try {
     const count = await contactService.bulkCreateContacts(req.body.contacts);
     res.json({
