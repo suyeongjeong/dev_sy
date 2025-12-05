@@ -293,6 +293,47 @@
             display: block;
             margin-bottom: 5px;
         }
+
+        .group-filter-container {
+            margin-bottom: 15px;
+        }
+
+        .group-pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .group-pill {
+            padding: 8px 16px;
+            border: 2px solid #2196F3;
+            border-radius: 20px;
+            background: white;
+            color: #2196F3;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .group-pill:hover {
+            background: #E3F2FD;
+        }
+
+        .group-pill.active {
+            background: #2196F3;
+            color: white;
+        }
+
+        .group-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #E3F2FD;
+            color: #2196F3;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
@@ -377,17 +418,34 @@
                     선택된 연락처: <strong id="selectedCount">2</strong>명
                 </div>
 
-                <button class="btn btn-success select-all-btn" onclick="alert('서버 연결 시 사용 가능')">전체 선택</button>
+                <div class="group-filter-container">
+                    <div class="group-pills">
+                        <button class="group-pill active" onclick="filterByGroup('all')">전체</button>
+                        <button class="group-pill" onclick="filterByGroup('고객')">고객</button>
+                        <button class="group-pill" onclick="filterByGroup('VIP')">VIP</button>
+                        <button class="group-pill" onclick="filterByGroup('직원')">직원</button>
+                    </div>
+                </div>
+
+                <button class="btn btn-success select-all-btn" onclick="selectAllFiltered()">현재 그룹 전체 선택</button>
                 <button class="btn btn-danger select-all-btn" onclick="alert('서버 연결 시 사용 가능')">선택 해제</button>
 
                 <div id="sendContactList">
-                    <div class="checkbox-item selected">
-                        <div class="contact-name">김철수</div>
+                    <div class="checkbox-item selected" data-group="고객">
+                        <div class="contact-name">김철수 <span class="group-badge">고객</span></div>
                         <div class="contact-phone">010-1234-5678</div>
                     </div>
-                    <div class="checkbox-item selected">
-                        <div class="contact-name">이영희</div>
+                    <div class="checkbox-item selected" data-group="VIP">
+                        <div class="contact-name">이영희 <span class="group-badge">VIP</span></div>
                         <div class="contact-phone">010-9876-5432</div>
+                    </div>
+                    <div class="checkbox-item" data-group="고객">
+                        <div class="contact-name">박민수 <span class="group-badge">고객</span></div>
+                        <div class="contact-phone">010-1111-2222</div>
+                    </div>
+                    <div class="checkbox-item" data-group="직원">
+                        <div class="contact-name">최지우 <span class="group-badge">직원</span></div>
+                        <div class="contact-phone">010-3333-4444</div>
                     </div>
                 </div>
 
@@ -430,6 +488,8 @@
     </div>
 
     <script>
+        let currentGroup = 'all';
+
         // 탭 전환
         function switchTab(tabName, event) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -469,6 +529,65 @@
             document.getElementById('contactEmail').value = '';
             document.getElementById('contactGroup').value = '';
         }
+
+        // 그룹별 필터링
+        function filterByGroup(group) {
+            currentGroup = group;
+
+            // 그룹 pill 활성화 상태 업데이트
+            document.querySelectorAll('.group-pill').forEach(pill => {
+                pill.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // 연락처 필터링
+            const contactItems = document.querySelectorAll('#sendContactList .checkbox-item');
+            contactItems.forEach(item => {
+                const itemGroup = item.getAttribute('data-group');
+                if (group === 'all' || itemGroup === group) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            updateSelectedCount();
+        }
+
+        // 현재 그룹 전체 선택
+        function selectAllFiltered() {
+            const contactItems = document.querySelectorAll('#sendContactList .checkbox-item');
+            contactItems.forEach(item => {
+                const itemGroup = item.getAttribute('data-group');
+                if (currentGroup === 'all' || itemGroup === currentGroup) {
+                    if (item.style.display !== 'none') {
+                        item.classList.add('selected');
+                    }
+                }
+            });
+            updateSelectedCount();
+        }
+
+        // 선택된 연락처 수 업데이트
+        function updateSelectedCount() {
+            const selectedItems = document.querySelectorAll('#sendContactList .checkbox-item.selected');
+            const visibleSelected = Array.from(selectedItems).filter(item => item.style.display !== 'none');
+            document.getElementById('selectedCount').textContent = visibleSelected.length;
+        }
+
+        // 연락처 아이템 클릭 이벤트
+        document.addEventListener('DOMContentLoaded', () => {
+            const contactItems = document.querySelectorAll('#sendContactList .checkbox-item');
+            contactItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    this.classList.toggle('selected');
+                    updateSelectedCount();
+                });
+            });
+
+            // 초기 선택 수 업데이트
+            updateSelectedCount();
+        });
 
         // 발송 시뮬레이션
         function simulateSend() {

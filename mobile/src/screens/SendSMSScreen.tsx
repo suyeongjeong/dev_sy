@@ -21,6 +21,7 @@ export default function SendSMSScreen() {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState<string>('all');
 
   useEffect(() => {
     loadContacts();
@@ -59,12 +60,36 @@ export default function SendSMSScreen() {
   };
 
   const getFilteredContacts = () => {
-    if (!searchQuery) return contacts;
-    return contacts.filter(
-      c =>
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.phoneNumber.includes(searchQuery)
-    );
+    let filtered = contacts;
+
+    // 그룹 필터링
+    if (selectedGroup !== 'all') {
+      filtered = filtered.filter(c => c.group === selectedGroup);
+    }
+
+    // 검색어 필터링
+    if (searchQuery) {
+      filtered = filtered.filter(
+        c =>
+          c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.phoneNumber.includes(searchQuery)
+      );
+    }
+
+    return filtered;
+  };
+
+  // 그룹 목록 추출
+  const getGroups = () => {
+    const groups = new Set(contacts.map(c => c.group).filter(g => g));
+    return ['all', ...Array.from(groups)];
+  };
+
+  // 그룹별 선택
+  const selectByGroup = (group: string) => {
+    const groupContacts = contacts.filter(c => c.group === group);
+    const groupIds = new Set(groupContacts.map(c => c.id!));
+    setSelectedContacts(groupIds);
   };
 
   const handleSend = async () => {
@@ -184,6 +209,45 @@ export default function SendSMSScreen() {
           onChangeText={setSearchQuery}
         />
 
+        {/* 그룹 필터 */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.groupFilter}
+        >
+          {getGroups().map((group) => (
+            <TouchableOpacity
+              key={group}
+              style={[
+                styles.groupButton,
+                selectedGroup === group && styles.groupButtonActive,
+              ]}
+              onPress={() => setSelectedGroup(group)}
+            >
+              <Text
+                style={[
+                  styles.groupButtonText,
+                  selectedGroup === group && styles.groupButtonTextActive,
+                ]}
+              >
+                {group === 'all' ? '전체' : group}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* 그룹별 선택 버튼 */}
+        {selectedGroup !== 'all' && (
+          <TouchableOpacity
+            style={styles.selectGroupButton}
+            onPress={() => selectByGroup(selectedGroup)}
+          >
+            <Text style={styles.selectGroupButtonText}>
+              '{selectedGroup}' 그룹 전체 선택
+            </Text>
+          </TouchableOpacity>
+        )}
+
         {loading ? (
           <ActivityIndicator size="large" color="#2196F3" />
         ) : (
@@ -282,6 +346,44 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 16,
     backgroundColor: '#fff',
+  },
+  groupFilter: {
+    marginBottom: 12,
+    maxHeight: 50,
+  },
+  groupButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#2196F3',
+    backgroundColor: '#fff',
+  },
+  groupButtonActive: {
+    backgroundColor: '#2196F3',
+  },
+  groupButtonText: {
+    color: '#2196F3',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  groupButtonTextActive: {
+    color: '#fff',
+  },
+  selectGroupButton: {
+    backgroundColor: '#E3F2FD',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#2196F3',
+  },
+  selectGroupButtonText: {
+    color: '#2196F3',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   contactItem: {
     flexDirection: 'row',
