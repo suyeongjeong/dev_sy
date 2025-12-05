@@ -10,9 +10,12 @@ import {
   FlatList,
   ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { contactService, Contact } from '../services/contactService';
 import { smsService } from '../services/smsService';
+
+const LAST_SELECTED_GROUP_KEY = '@last_selected_group';
 
 export default function SendSMSScreen() {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -25,7 +28,13 @@ export default function SendSMSScreen() {
 
   useEffect(() => {
     loadContacts();
+    loadLastSelectedGroup();
   }, []);
+
+  // 선택된 그룹이 변경될 때마다 저장
+  useEffect(() => {
+    saveLastSelectedGroup(selectedGroup);
+  }, [selectedGroup]);
 
   const loadContacts = async () => {
     setLoading(true);
@@ -36,6 +45,27 @@ export default function SendSMSScreen() {
       Alert.alert('오류', '연락처를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 마지막 선택한 그룹 불러오기
+  const loadLastSelectedGroup = async () => {
+    try {
+      const savedGroup = await AsyncStorage.getItem(LAST_SELECTED_GROUP_KEY);
+      if (savedGroup !== null) {
+        setSelectedGroup(savedGroup);
+      }
+    } catch (error) {
+      console.log('Failed to load last selected group:', error);
+    }
+  };
+
+  // 선택한 그룹 저장
+  const saveLastSelectedGroup = async (group: string) => {
+    try {
+      await AsyncStorage.setItem(LAST_SELECTED_GROUP_KEY, group);
+    } catch (error) {
+      console.log('Failed to save last selected group:', error);
     }
   };
 

@@ -488,7 +488,8 @@
     </div>
 
     <script>
-        let currentGroup = 'all';
+        const LAST_SELECTED_GROUP_KEY = 'lastSelectedGroup';
+        let currentGroup = localStorage.getItem(LAST_SELECTED_GROUP_KEY) || 'all';
 
         // 탭 전환
         function switchTab(tabName, event) {
@@ -531,14 +532,23 @@
         }
 
         // 그룹별 필터링
-        function filterByGroup(group) {
+        function filterByGroup(group, saveToStorage = true) {
             currentGroup = group;
+
+            // localStorage에 저장
+            if (saveToStorage) {
+                localStorage.setItem(LAST_SELECTED_GROUP_KEY, group);
+            }
 
             // 그룹 pill 활성화 상태 업데이트
             document.querySelectorAll('.group-pill').forEach(pill => {
                 pill.classList.remove('active');
+                const pillText = pill.textContent.trim();
+                const pillGroup = pillText === '전체' ? 'all' : pillText;
+                if (pillGroup === group) {
+                    pill.classList.add('active');
+                }
             });
-            event.target.classList.add('active');
 
             // 연락처 필터링
             const contactItems = document.querySelectorAll('#sendContactList .checkbox-item');
@@ -585,8 +595,8 @@
                 });
             });
 
-            // 초기 선택 수 업데이트
-            updateSelectedCount();
+            // 저장된 그룹 필터 적용 (이벤트 객체 없이)
+            filterByGroup(currentGroup, false);
         });
 
         // 발송 시뮬레이션
